@@ -11,6 +11,29 @@ import scipy.integrate as sin
 import seaborn as sns
 import sympy as sp
 
+
+def ode_Cheng(f, y0, tspan, *args):
+    """Solve ordinary differential equation by simple integration
+
+    :f: function that governs the deterministic part
+    :y0: initial condition
+    :tspan: simulation period
+    :returns: solution of y 
+
+    """
+    N = len(tspan)
+    d = np.size(y0)
+    dt = (tspan[N-1] - tspan[0])/(N - 1)
+    # allocate space for result
+    y = np.zeros((N, d), dtype=type(y0[0]))
+    y[0] = y0
+    for n in range(N-1):
+        tn = tspan[n]
+        yn = y[n]
+        y[n+1] = yn + f(yn, tn, *args) * dt
+    return y
+
+
 def load_data(net_type):
     """TODO: Docstring for gen_data.
 
@@ -223,47 +246,5 @@ def network_generate(network_type, N, beta, seed, d=None):
     degree = np.sum(A>0, 1)
     cum_index = np.hstack((0, np.cumsum(degree)))
     return A, A_interaction, index_i, index_j, cum_index
-
-def heatmap(des, realization_index, N, plot_range, plot_interval, dt, linewidth=0):
-    """plot and save figure for animation
-
-    :des: the destination where data is saved and the figures are put
-    :realization_index: which data is chosen
-    :plot_range: the last moment to plot 
-    :plot_interval: the interval to plot
-    :dt: simulation interval
-    :returns: None
-
-    """
-    des_sub = des + 'heatmap/realization' + str(realization_index) + '/'
-    if not os.path.exists(des_sub):
-        os.makedirs(des_sub)
-    des_file = des + f'evolution/realization{realization_index}_T_{plot_range[0]}_{plot_range[1]}.npy'
-    data = np.load(des_file)
-    xmin = np.mean(data[0])
-    xmax = np.mean(data[-1])
-    rho = (data - xmin) / (xmax - xmin)
-    for i in np.arange(0, plot_range[1]-plot_range[0], plot_interval):
-        data_snap = rho[int(i/dt)].reshape(int(np.sqrt(N)), int(np.sqrt(N)))
-        #fig = sns.heatmap(data_snap, vmin=0, vmax=1, linewidths=linewidth, cbar_kws = {"orientation" : "horizontal"})
-
-        fig = sns.heatmap(data_snap, vmin=0, vmax=1, linewidths=linewidth)
-        cax = plt.gcf().axes[-1]
-        cax.tick_params(labelsize=0.8 * fs)
-        """
-        data_snap = abs(data_snap)
-        data_snap = np.log(data_snap)
-        fig = sns.heatmap(data_snap, vmin=-4, vmax=0, linewidths=linewidth)
-        """
-        fig = fig.get_figure()
-        # plt.subplots_adjust(left=0.02, right=0.98, wspace=0.25, hspace=0.25, bottom=0.02, top=0.98)
-        plt.subplots_adjust(left=0.15, right=0.88, wspace=0.25, hspace=0.25, bottom=0.15, top=0.98)
-        plt.axis('off')
-        #fig.patch.set_alpha(0.)
-        # plt.title('time = ' + str(round(i, 2)) )
-        fig.savefig(des_sub + str(int(i/plot_interval)) + '.svg', format="svg")
-
-        plt.close()
-    return None
 
 
