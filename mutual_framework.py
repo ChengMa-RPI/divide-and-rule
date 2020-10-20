@@ -11,6 +11,7 @@ import scipy.integrate as sin
 import seaborn as sns
 import sympy as sp
 
+import imageio
 
 def ode_Cheng(f, y0, tspan, *args):
     """Solve ordinary differential equation by simple integration
@@ -31,6 +32,27 @@ def ode_Cheng(f, y0, tspan, *args):
         tn = tspan[n]
         yn = y[n]
         y[n+1] = yn + f(yn, tn, *args) * dt
+    return y
+
+def ddeint_Cheng(f, y0, tspan, *args):
+    """Solve ordinary differential equation by simple integration
+
+    :f: function that governs the deterministic part
+    :g: before t=0 
+    :tspan: simulation period
+    :returns: solution of y 
+
+    """
+    N = len(tspan)
+    d = np.size(y0)
+    dt = (tspan[N-1] - tspan[0])/(N - 1)
+    # allocate space for result
+    y = np.zeros((N, d), dtype=type(y0[0]))
+    y[0] = y0
+    for n in range(N-1):
+        tn = tspan[n]
+        yn = y[n]
+        y[n+1] = yn + f(y, y0, tn, dt, *args) * dt
     return y
 
 
@@ -227,15 +249,25 @@ def network_generate(network_type, N, beta, seed, d=None):
     elif network_type == 'BA':
         m = d
         G = nx.barabasi_albert_graph(N, m, seed)
+    elif network_type == 'SF':
+        degree_seq = np.array(nx.utils.random_sequence.powerlaw_sequence(N, d, seed=seed), dtype=int)
+        i = 0
+        while np.sum(degree_seq)%2:
+            i+=1
+            degree_seq[-1] = int(nx.utils.random_sequence.powerlaw_sequence(1, d, seed=seed+N+i)[0])
+        G = nx.configuration_model(degree_seq, seed=seed)
+        G = nx.Graph(G)  # remove parallel edges
+        G.remove_edges_from(list(nx.selfloop_edges(G)))  # remove self loops (networkx version is not the newest one)
+
     elif network_type == 'real':
         A, M, N = load_data(seed)
         A = A_from_data(seed%2, M)
-    if network_type != 'real':
-        A = np.array(nx.adjacency_matrix(G).todense()) 
-    else:
-        if nx.is_connected(G) == False:
-            print('more than one component')
-            return None
+    if network_type == 'real':
+        G = nx.from_numpy_matrix(A)
+    if nx.is_connected(G) == False:
+        print('more than one component')
+        G = G.subgraph(max(nx.connected_components(G), key=len))
+    A = np.array(nx.adjacency_matrix(G).todense()) 
     beta_eff, _ = betaspace(A, [0])
     weight = beta/ beta_eff
     A = A * weight
@@ -248,3 +280,17 @@ def network_generate(network_type, N, beta, seed, d=None):
     return A, A_interaction, index_i, index_j, cum_index
 
 
+def gif(data_des, file_type, file_range, save_des):
+    """TODO: Docstring for gif.
+
+    :des_data: TODO
+    :des_save: TODO
+    :returns: TODO
+
+    """
+    with imageio.get_writer(save_des + 'evolution.gif', mode='I') as writer:
+        for i in file_range:
+
+            filename = data_des + str(i) + file_type 
+            image = imageio.imread(filename)
+            writer.append_data(image)
