@@ -55,7 +55,6 @@ def ddeint_Cheng(f, y0, tspan, *args):
         y[n+1] = yn + f(y, y0, tn, dt, *args) * dt
     return y
 
-
 def load_data(net_type):
     """TODO: Docstring for gen_data.
 
@@ -258,12 +257,14 @@ def network_generate(network_type, N, beta, seed, d=None):
         G = nx.configuration_model(degree_seq, seed=seed)
         G = nx.Graph(G)  # remove parallel edges
         G.remove_edges_from(list(nx.selfloop_edges(G)))  # remove self loops (networkx version is not the newest one)
+    elif network_type == 'star':
+        G = nx.star_graph(seed+1)
 
     elif network_type == 'real':
         A, M, N = load_data(seed)
         A = A_from_data(seed%2, M)
-    if network_type == 'real':
         G = nx.from_numpy_matrix(A)
+
     if nx.is_connected(G) == False:
         print('more than one component')
         G = G.subgraph(max(nx.connected_components(G), key=len))
@@ -278,7 +279,6 @@ def network_generate(network_type, N, beta, seed, d=None):
     degree = np.sum(A>0, 1)
     cum_index = np.hstack((0, np.cumsum(degree)))
     return A, A_interaction, index_i, index_j, cum_index
-
 
 def gif(data_des, file_type, file_range, save_des):
     """TODO: Docstring for gif.
