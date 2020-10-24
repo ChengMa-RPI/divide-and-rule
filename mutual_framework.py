@@ -249,12 +249,17 @@ def network_generate(network_type, N, beta, seed, d=None):
         m = d
         G = nx.barabasi_albert_graph(N, m, seed)
     elif network_type == 'SF':
-        degree_seq = np.array(nx.utils.random_sequence.powerlaw_sequence(N, d, seed=seed), dtype=int)
-        i = 0
+        kmin, gamma = d
+        kmax = int(kmin * N ** (1/(gamma-1))) 
+        probability = lambda k: (gamma - 1) * kmin**(gamma-1) * k**(-gamma)
+        k_list = np.arange(kmin, 10 *kmax, 0.001)
+        p_list = probability(k_list)
+        p_list = p_list/np.sum(p_list)
+        degree_seq = np.array(np.round(np.random.RandomState(seed=seed[0]).choice(k_list, size=N, p=p_list)), int)
         while np.sum(degree_seq)%2:
-            i+=1
-            degree_seq[-1] = int(nx.utils.random_sequence.powerlaw_sequence(1, d, seed=seed+N+i)[0])
-        G = nx.configuration_model(degree_seq, seed=seed)
+            degree_seq[-1] = int(np.round(np.random.RandomState(seed=seed[0]).choice(k_list, size=1, p=p_list))) 
+
+        G = nx.configuration_model(degree_seq, seed=seed[1])
         G = nx.Graph(G)  # remove parallel edges
         G.remove_edges_from(list(nx.selfloop_edges(G)))  # remove self loops (networkx version is not the newest one)
     elif network_type == 'star':
