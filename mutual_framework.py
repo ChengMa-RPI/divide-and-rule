@@ -226,7 +226,7 @@ def mutual_multi(x, t, N, index_i, index_j, A_interaction, cum_index, arguments)
     sum_f = B + x * (1 - x/K) * ( x/C - 1)
     sum_g = A_interaction * x[index_j] / (D + E * x[index_i] + H * x[index_j])
 
-    dxdt = sum_f + x * np.array([sum_g[i:j].sum() for i, j in zip(cum_index[:-1], cum_index[1:])])
+    dxdt = sum_f + x * np.add.reduceat(sum_g, cum_index[:-1])
 
     return dxdt
 
@@ -250,14 +250,22 @@ def network_generate(network_type, N, beta, seed, d=None):
         G = nx.barabasi_albert_graph(N, m, seed)
     elif network_type == 'SF':
         kmin, gamma = d
+
+        degree_seq = np.array(np.round((np.random.RandomState(seed[0]).pareto(gamma-1, N) + 1) * kmin), int)
+
+        '''
         kmax = int(kmin * N ** (1/(gamma-1))) 
         probability = lambda k: (gamma - 1) * kmin**(gamma-1) * k**(-gamma)
         k_list = np.arange(kmin, 10 *kmax, 0.001)
         p_list = probability(k_list)
         p_list = p_list/np.sum(p_list)
         degree_seq = np.array(np.round(np.random.RandomState(seed=seed[0]).choice(k_list, size=N, p=p_list)), int)
+        '''
+        i = 0
         while np.sum(degree_seq)%2:
-            degree_seq[-1] = int(np.round(np.random.RandomState(seed=seed[0]).choice(k_list, size=1, p=p_list))) 
+            i+=1
+            #degree_seq[-1] = int(np.round(np.random.RandomState(seed=i).choice(k_list, size=1, p=p_list))) 
+            degree_seq[-1] = int(np.round(np.random.RandomState(seed=i).pareto(gamma-1, 1) + 1) * kmin)
 
         G = nx.configuration_model(degree_seq, seed=seed[1])
         G = nx.Graph(G)  # remove parallel edges
