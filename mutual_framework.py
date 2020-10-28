@@ -257,13 +257,23 @@ def network_generate(network_type, N, beta, seed, d=None):
         p_list = p_list/np.sum(p_list)
         degree_seq = np.array(np.round(np.random.RandomState(seed=seed[0]).choice(k_list, size=N, p=p_list)), int)
         '''
-        kmin, gamma = d
+        kmin, gamma, kmax = d
         degree_seq = np.array(((np.random.RandomState(seed[0]).pareto(gamma-1, N) + 1) * kmin), int)
+        degree_max = np.max(degree_seq)
+        if degree_max > kmax:
+            degree_seq[degree_seq>kmax] = kmax
+        else:
+            degree_seq[degree_seq == degree_max] = kmax
         i = 0
         while np.sum(degree_seq)%2:
             i+=1
             #degree_seq[-1] = int(np.round(np.random.RandomState(seed=i).choice(k_list, size=1, p=p_list))) 
             degree_seq[-1] = int((np.random.RandomState(seed=N+i).pareto(gamma-1, 1) + 1) * kmin)
+            degree_max = np.max(degree_seq)
+            if degree_max > kmax:
+                degree_seq[degree_seq>kmax] = kmax
+            else:
+                degree_seq[degree_seq == degree_max] = kmax
 
         G = nx.configuration_model(degree_seq, seed=seed[1])
         G = nx.Graph(G)  # remove parallel edges
