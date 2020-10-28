@@ -10,6 +10,7 @@ import networkx as nx
 import scipy.integrate as sin
 import seaborn as sns
 import sympy as sp
+import itertools
 
 import imageio
 
@@ -249,6 +250,9 @@ def network_generate(network_type, N, beta, seed, d=None):
         m = d
         G = nx.barabasi_albert_graph(N, m, seed)
     elif network_type == 'SF':
+        
+        gamma, kmax, ktry, kmin = d
+        G = generate_SF(N, seed, gamma, kmax, ktry, kmin)
         '''
         kmax = int(kmin * N ** (1/(gamma-1))) 
         probability = lambda k: (gamma - 1) * kmin**(gamma-1) * k**(-gamma)
@@ -256,7 +260,6 @@ def network_generate(network_type, N, beta, seed, d=None):
         p_list = probability(k_list)
         p_list = p_list/np.sum(p_list)
         degree_seq = np.array(np.round(np.random.RandomState(seed=seed[0]).choice(k_list, size=N, p=p_list)), int)
-        '''
         kmin, gamma, kmax = d
         degree_seq = np.array(((np.random.RandomState(seed[0]).pareto(gamma-1, N) + 1) * kmin), int)
         degree_max = np.max(degree_seq)
@@ -278,6 +281,7 @@ def network_generate(network_type, N, beta, seed, d=None):
         G = nx.configuration_model(degree_seq, seed=seed[1])
         G = nx.Graph(G)  # remove parallel edges
         G.remove_edges_from(list(nx.selfloop_edges(G)))  # remove self loops (networkx version is not the newest one)
+        '''
     elif network_type == 'star':
         G = nx.star_graph(seed+1)
 
@@ -315,3 +319,69 @@ def gif(data_des, file_type, file_range, save_des):
             filename = data_des + str(i) + file_type 
             image = imageio.imread(filename)
             writer.append_data(image)
+
+def generate_SF(N, seed, gamma, kmax, ktry, kmin):
+    """generate scale free network with fixed N, kmin, kmax, kave, gamma
+
+    :N: TODO
+    :seed: TODO
+    :d: TODO
+    :returns: TODO
+
+    """
+    "generate degree sequence "
+    N_predefine = N + 1
+    while N_predefine > N:
+        k = np.arange(kmin, ktry+1, 1)
+        degree_hist = np.array(np.round((k/ktry) ** (-gamma)), dtype=int)
+        degree_seq1 = np.hstack(([degree_hist[i] * [i+kmin] for i in range(np.size(degree_hist))]))
+        N_predefine = int(np.size(degree_seq1))
+        ktry = ktry - 1
+    degree_seq2 = np.array(((np.random.RandomState(seed[0]).pareto(gamma-1, N-N_predefine - 1) + 1) * kmin), int)
+
+    while np.max(degree_seq2) > ktry:
+        large_index = np.where(degree_seq2>ktry)[0]
+        degree_seq2[large_index] = np.array(((np.random.RandomState(seed[0]+1).pareto(gamma-1, np.size(large_index)) + 1) * kmin), int)
+
+    degree_seq = np.hstack((degree_seq1, degree_seq2, kmax))
+    i = 0
+    while np.sum(degree_seq)%2:
+        i+=1
+        substitution = int((np.random.RandomState(seed=seed[0]+N+i).pareto(gamma-1, 1) + 1) * kmin)
+        if substitution <= ktry:
+            degree_seq[-2] = substitution
+
+    degree_original = degree_seq.copy()
+
+    G = nx.empty_graph(N)
+    "generate scale free network using configuration model"
+    #stublist = list(itertools.chain.from_iterable([n] * d for n, d in enumerate(degree_sequence))) 
+    no_add = 0
+    degree_change = 1
+    j = 0
+    while np.sum(degree_seq) and no_add < 100:
+
+        stublist = nx.generators.degree_seq._to_stublist(degree_seq)
+        M = len(stublist)//2  # the number of edges
+
+        random_state = np.random.RandomState(seed[1] + j)
+        random_state.shuffle(stublist)
+        out_stublist, in_stublist = stublist[:M], stublist[M:]
+        if degree_change == 0:
+            no_add += 1
+        else:
+            no_add = 0
+        G.add_edges_from(zip(out_stublist, in_stublist))
+
+        G = nx.Graph(G)  # remove parallel edges
+        G.remove_edges_from(list(nx.selfloop_edges(G)))  # remove self loops (networkx version is not the newest one)
+        if nx.is_connected(G) == False:
+            G = G.subgraph(max(nx.connected_components(G), key=len)).copy()
+        degree_alive = np.array([G.degree[i] if i in G.nodes() else 0 for i in range(N)])
+        degree_former = np.sum(degree_seq)
+        degree_seq = degree_original - degree_alive
+        degree_now = np.sum(degree_seq)
+        degree_change = degree_now-degree_former
+        j += 1
+
+    return G
