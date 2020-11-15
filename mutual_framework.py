@@ -11,6 +11,7 @@ import scipy.integrate as sin
 import seaborn as sns
 import sympy as sp
 import itertools
+import scipy.io
 
 import imageio
 
@@ -231,7 +232,7 @@ def mutual_multi(x, t, N, index_i, index_j, A_interaction, cum_index, arguments)
 
     return dxdt
 
-def network_generate(network_type, N, beta, seed, d=None):
+def network_generate(network_type, N, beta, betaeffect, seed, d=None):
     """TODO: Docstring for network_generate.
 
     :arg1: TODO
@@ -294,8 +295,11 @@ def network_generate(network_type, N, beta, seed, d=None):
         print('more than one component')
         G = G.subgraph(max(nx.connected_components(G), key=len))
     A = np.array(nx.adjacency_matrix(G).todense()) 
-    beta_eff, _ = betaspace(A, [0])
-    weight = beta/ beta_eff
+    if betaeffect:
+        beta_eff, _ = betaspace(A, [0])
+        weight = beta/ beta_eff
+    else:
+        weight = beta
     A = A * weight
     A_index = np.where(A>0)
     A_interaction = A[A_index]
@@ -402,9 +406,9 @@ def generate_SF(N, seed, gamma, kmax, kmin):
     k = np.arange(kmin, N-1, 1)
     pk = p(k) / np.sum(p(k))
     random_state = np.random.RandomState(seed[0])
-    if kmax == N-1:
+    if kmax == N-1 or kmax == N-2:
         degree_seq = random_state.choice(k, size=N, p=pk)
-    else:
+    elif kmax == 0 or kmax == 1:
         degree_try = random_state.choice(k, size=1000000, p=pk)
         k_upper = int(np.sqrt(N * np.mean(degree_try)))
         k = np.arange(kmin, k_upper+1, 1)
@@ -447,5 +451,7 @@ def generate_SF(N, seed, gamma, kmax, kmin):
         degree_now = np.sum(degree_seq)
         degree_change = degree_now-degree_former
         j += 1
+        if kmax == 1 or kmax == N-2:
+            break
     return G
 
