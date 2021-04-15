@@ -73,11 +73,11 @@ def dde_RK45(f, y0, tspan, *args):
     for n in range(N-1):
         tn = tspan[n]
         yn = y[n]
-        k1 = f(y, y0, yn, tn, dt, *args)
-        k2 = f(y, y0, yn+k1/2, tn+dt/2, dt, *args)
-        k3 = f(y, y0, yn+k2/2, tn+dt/2, dt, *args) 
-        k4 = f(y, y0, yn+k3, tn+dt, dt, *args)
-        y[n+1] = yn + (k1/6 + k2/3 + k3/3 + k4/6) * dt
+        k1 = dt * f(y, y0, yn, tn, dt, *args)
+        k2 = dt * f(y, y0, yn+k1/2, tn+dt/2, dt, *args)
+        k3 = dt * f(y, y0, yn+k2/2, tn+dt/2, dt, *args) 
+        k4 = dt * f(y, y0, yn+k3, tn+dt, dt, *args)
+        y[n+1] = yn + (k1/6 + k2/3 + k3/3 + k4/6) 
     return y
 
 def load_data(net_type):
