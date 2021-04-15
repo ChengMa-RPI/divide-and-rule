@@ -54,7 +54,30 @@ def ddeint_Cheng(f, y0, tspan, *args):
     for n in range(N-1):
         tn = tspan[n]
         yn = y[n]
-        y[n+1] = yn + f(y, y0, tn, dt, *args) * dt
+        y[n+1] = yn + f(y, y0, yn, tn, dt, *args) * dt
+    return y
+
+def dde_RK45(f, y0, tspan, *args):
+    """TODO: Docstring for dde_RK45.
+
+    :arg1: TODO
+    :returns: TODO
+
+    """
+    N = len(tspan)
+    d = np.size(y0)
+    dt = (tspan[N-1] - tspan[0])/(N - 1)
+    # allocate space for result
+    y = np.zeros((N, d))
+    y[0] = y0
+    for n in range(N-1):
+        tn = tspan[n]
+        yn = y[n]
+        k1 = f(y, y0, yn, tn, dt, *args)
+        k2 = f(y, y0, yn+k1/2, tn+dt/2, dt, *args)
+        k3 = f(y, y0, yn+k2/2, tn+dt/2, dt, *args) 
+        k4 = f(y, y0, yn+k3, tn+dt, dt, *args)
+        y[n+1] = yn + (k1/6 + k2/3 + k3/3 + k4/6) * dt
     return y
 
 def load_data(net_type):
@@ -403,7 +426,7 @@ def generate_SF(N, seed, gamma, kmax, kmin):
 
     """
     p = lambda k: k ** (float(-gamma))
-    k = np.arange(kmin, N-1, 1)
+    k = np.arange(kmin, N, 1)
     pk = p(k) / np.sum(p(k))
     random_state = np.random.RandomState(seed[0])
     if kmax == N-1 or kmax == N-2:
