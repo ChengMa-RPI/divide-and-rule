@@ -307,7 +307,9 @@ def network_generate(network_type, N, beta, betaeffect, seed, d=None):
         G.remove_edges_from(list(nx.selfloop_edges(G)))  # remove self loops (networkx version is not the newest one)
         '''
     elif network_type == 'star':
-        G = nx.star_graph(seed+1)
+        G = nx.star_graph(d+1)
+    elif network_type == 'RGG':
+        G = nx.generators.geometric.random_geometric_graph(N, d, seed=seed)
 
     elif network_type == 'real':
         A, M, N = load_data(seed)
