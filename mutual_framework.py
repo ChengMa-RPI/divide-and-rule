@@ -140,7 +140,7 @@ def A_from_data(net_type, M):
         M_0 = M_nm1 * M  # if the element of M_0 is 0, there is no common species shared with two plants 
         "suppose unweighted interaction network, which means it is blind for bees to choose which plant should pollinate."
         k = M.sum(-1)  # total node weight of species in the other network B 
-        A = np.sum(M_3d * np.heaviside(M_0, 0) / k.reshape(m, 1), axis=1) 
+        # A = np.sum(M_3d * np.heaviside(M_0, 0) / k.reshape(m, 1), axis=1) 
     elif net_type == 0:
         M_nm1 = np.transpose(M_1mn, (1,2,0))  # M_nm1 is n * m * 1 matrix 
         M_3d = M_nm1 + M.T
@@ -262,6 +262,8 @@ def network_generate(network_type, N, beta, betaeffect, seed, d=None):
     :returns: TODO
 
     """
+    if network_type == 'complete':
+        G = nx.complete_graph(N)
     if network_type == '2D':
         G = nx.grid_graph(dim=[int(np.sqrt(N)),int(np.sqrt(N))], periodic=True)
     elif network_type == 'RR':
@@ -313,8 +315,14 @@ def network_generate(network_type, N, beta, betaeffect, seed, d=None):
 
     elif network_type == 'real':
         A, M, N = load_data(seed)
-        A = A_from_data(seed%2, M)
+        #A = A_from_data(seed%2, M)
+        A = np.heaviside(A, 0) # unweighted network
         G = nx.from_numpy_matrix(A)
+    elif network_type == 'SBM_ER':
+        N_group = N
+        p = d
+        G = nx.stochastic_block_model(N_group, p, seed=seed)
+ 
 
     if nx.is_connected(G) == False:
         print('more than one component')
