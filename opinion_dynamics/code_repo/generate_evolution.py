@@ -138,24 +138,31 @@ def parallel_actual_simulation_network_multi_opinion(network_type, N, net_seed, 
     seed_p = fluctuate_seed
     seed_pu = fluctuate_seed
     ncA = int(round(N_actual * pA))
-    while True:
-        p_fluctuate = np.random.RandomState(seed_p).normal(p, sigma_p*p, minority)
-        p_fluctuate = p_fluctuate / p_fluctuate.sum() * p*minority
-        nc_minority =  np.array(np.round(N_actual * p_fluctuate), int)
-
-        if nc_minority.min() > 0 and nc_minority.sum() == round(N_actual * p * minority):
-            break
-        else:
-            seed_p += 1
-
     pu = (1-pA - p * minority) / minority
-    while True:
-        pu_fluctuate = np.random.RandomState(seed_pu).normal(pu, sigma_pu*pu, minority)
-        pu_fluctuate = pu_fluctuate / pu_fluctuate.sum() * pu*minority
-        if pu_fluctuate.min() > 0 and pu_fluctuate.max() < pu * minority:
-            break
-        else:
-            seed_pu += 1
+    "p, pu is constant if sigma_p and sigma_pu == 0, which is the current setup. NON_ZERO sigma_p or sigma_pu are designed for further exporations on unequal distribution of committed/uncommitted agents among the group A_tilde (the collection of opinions other than the big committed opinion A)"
+    """
+    if sigma_p == 0 and sigma_pu == 0:
+        p_fluctuate = p * np.ones(minority)
+        pu_fluctuate = pu * np.ones(minority)
+    """
+    if True:
+        while True:
+            p_fluctuate = np.random.RandomState(seed_p).normal(p, sigma_p*p, minority)
+            p_fluctuate = p_fluctuate / p_fluctuate.sum() * p*minority
+            nc_minority =  np.array(np.round(N_actual * p_fluctuate), int)
+
+            if nc_minority.min() > 0 and nc_minority.sum() == round(N_actual * p * minority):
+                break
+            else:
+                seed_p += 1
+
+        while True:
+            pu_fluctuate = np.random.RandomState(seed_pu).normal(pu, sigma_pu*pu, minority)
+            pu_fluctuate = pu_fluctuate / pu_fluctuate.sum() * pu*minority
+            if pu_fluctuate.min() > 0 and pu_fluctuate.max() <= pu * minority:
+                break
+            else:
+                seed_pu += 1
 
     nc_minority =  np.array(np.round(N_actual * p_fluctuate), int)
     nuc_minority =  np.array(np.round(N_actual * pu_fluctuate), int)
@@ -234,8 +241,8 @@ number_opinion = 5
 p = 0.03
 comm_seed_list = np.arange(50)  # for averaging effect, multiple communication seeds to generate random realizations of naming game interaction
 pA_list = np.round(np.arange(0.01, 0.11, 0.01), 2)
-pA_list = [0.01, 0.02]
-number_opinion = 5
+pA_list = [0.01]
+number_opinion = 2
 for d, net_seed in zip(d_list, net_seed_list):
     for pA in pA_list:
         parallel_actual_simulation_network_multi_opinion(network_type, N, net_seed, d, interaction_number, data_point, number_opinion, comm_seed_list, pA, p)
