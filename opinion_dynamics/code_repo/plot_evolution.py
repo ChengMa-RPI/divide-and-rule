@@ -7,6 +7,7 @@ from numpy import linalg as LA
 import pandas as pd 
 from cycler import cycler
 import matplotlib as mpl
+import seaborn as sns
 import itertools
 from helper_function import network_generate
 
@@ -193,6 +194,53 @@ def plot_ratio_pAc_m(network_type_list, N, net_seed_list, d_list, interaction_nu
 
     return None
 
+def heatmap_pAc_m(network_type, N, net_seed_list, d_list, k_ave, interaction_number, number_opinion_list, comm_seed_list, pA_list, p_list):
+    """TODO: Docstring for plot_x_pA.
+
+    :arg1: TODO
+    :returns: TODO
+
+    """
+    interaction_number = N * 1000
+    data = []
+    for net_seed, d in zip(net_seed_list, d_list):
+        PA_critical = []
+        for number_opinion, p in zip(number_opinion_list, p_list):
+            R_pA = []
+            for pA in pA_list:
+                xA_mean, ratio = helper_cal_xA_pA_ave_ratio(network_type, N, net_seed, d, interaction_number, number_opinion, comm_seed_list, pA, p)
+                R_pA.append(ratio)
+            R_pA = np.array(R_pA)
+            PA_critical.append(pA_list[np.where(R_pA >1/2)[0][0]])
+        data.append(PA_critical)
+    data = data[::-1]
+    ax = sns.heatmap(data, linewidth=0, cmap='YlGnBu', cbar_kws={'label': '$P_A^{(c)}$'})
+    ax.figure.axes[-1].yaxis.label.set_size(22)
+
+
+    ax.set_yticks(np.arange(len(k_ave)) + 0.5)
+    ax.set_yticklabels(k_ave[::-1], rotation=-0)
+    ax.set_xticks(np.arange(len(number_opinion_list)) + 0.5)
+    ax.set_xticklabels(number_opinion_list, rotation=0)
+
+
+    save_des = '../figure0213/'
+    PA_tilde = round(number_opinion_list[0] * p_list[0], 2)
+    save_file = save_des + f'heatmap_{network_type}_N={N}_pAtilde={PA_tilde}_pA_critical_m_ratio.png'
+    plt.rc('font', size=ticksize)
+    plt.xlabel('$m$', fontsize=fontsize)
+    plt.ylabel('$\\langle k \\rangle $', fontsize=fontsize)
+    plt.xticks(fontsize=ticksize)
+    plt.yticks(fontsize=ticksize)
+    plt.subplots_adjust(left=0.15, right=0.90, wspace=0.25, hspace=0.25, bottom=0.15, top=0.92)
+    #plt.legend(frameon=False, fontsize = legendsize, markerscale=1.0)
+    plt.locator_params(nbins=6)
+    plt.savefig(save_file)
+    plt.close('all')
+    #plt.show()
+
+    return None
+
 
 
 
@@ -235,7 +283,7 @@ d = 8000
 net_seed = 0
 
 for pA in pA_list:
-    plot_x_t(network_type, N, net_seed, d, interaction_number, number_opinion, comm_seed_list, pA, p, plot_opinion_list)
+    #plot_x_t(network_type, N, net_seed, d, interaction_number, number_opinion, comm_seed_list, pA, p, plot_opinion_list)
     pass
 ########################################################
 
@@ -247,10 +295,13 @@ N = 1000
 interaction_number = 1000 * 1000
 net_seed_list = [1, 0, 0]
 d_list = [3000, 4000, 8000]
+network_type = 'WS'
+d_list = [[6, 0.2]]
+net_seed_list = [0]
 
 number_opinion_list = [2, 3, 4, 7]
 
-pA_list = np.round(np.arange(0.01, 0.16, 0.01), 2)
+pA_list = np.round(np.arange(0.01, 0.25, 0.01), 2)
 p_list = [0.06, 0.03, 0.02, 0.01] 
 
 for d, net_seed in zip(d_list, net_seed_list):
@@ -285,3 +336,19 @@ d_list = [30000, 40000, 80000, 160000, 0]
 ########################################################
 
 
+
+#######################################################
+"Figure12 heatmap"
+comm_seed_list = np.arange(50)
+pA_list = np.round(np.arange(0.01, 0.16, 0.01), 2)  # pA to identify the critical point.
+N = 1000 
+network_type = 'ER'
+d_list = [3000, 4000, 8000, 16000]  
+k_ave = [6, 8, 16, 32]
+net_seed_list = [1, 0, 0, 0]  
+interaction_number = N * 1000  
+number_opinion_list = [2, 3, 4, 7]  
+p_list = [0.06, 0.03, 0.02, 0.01]  # p_0, the committed minority, such that P_tilde{A} is fixed as 0.06
+number_opinion_list = [2, 3, 4, 7]  
+p_list = [0.06, 0.03, 0.02, 0.01]  # p_0, the committed minority, such that P_tilde{A} is fixed as 0.06
+heatmap_pAc_m(network_type, N, net_seed_list, d_list, k_ave, interaction_number, number_opinion_list, comm_seed_list, pA_list, p_list)
