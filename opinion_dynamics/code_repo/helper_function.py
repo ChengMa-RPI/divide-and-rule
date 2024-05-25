@@ -290,6 +290,10 @@ def network_generate(network_type, N, beta, betaeffect, seed, d=None):
         #G = nx.fast_gnp_random_graph(N, d, seed)
         m = d
         G = nx.gnm_random_graph(N, m, seed)
+    elif network_type == 'WS':
+        k, p =d
+        G = nx.watts_strogatz_graph(N, k, p, seed)
+
     elif network_type == 'BA':
         m = d
         G = nx.barabasi_albert_graph(N, m, seed)

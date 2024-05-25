@@ -223,11 +223,6 @@ network_type = 'complete'
 net_seed_list = [0]
 d_list = [0]
 
-"ER networks of different edge densities"
-network_type = 'ER'
-net_seed_list = [1, 0, 0]
-d_list = [3000, 4000, 8000]
-
 "Scale-free network of different power-law exponent"
 network_type = 'SF'
 d_list = [[2.1, 0, 2], [2.5, 0, 3], [3.5, 0, 4]]
@@ -236,13 +231,22 @@ net_seed_list = [[5, 5], [98, 98], [79, 79]]  # networks of these selected rando
 d_list = [[3.8, 0, 5]]
 net_seed_list = [[0, 0]]  # networks of these selected random seeds have the connected component with nodes close to N
 
+"Watts_strogatz network"
+network_type = 'WS'
+d_list = [[6, 0.2]]
+net_seed_list = [0]
+
+"ER networks of different edge densities"
+network_type = 'ER'
+net_seed_list = [1, 0, 0, 0]
+d_list = [3000, 4000, 8000, 16000]
+
 data_point = 1000
-number_opinion = 5
-p = 0.03
-comm_seed_list = np.arange(50)  # for averaging effect, multiple communication seeds to generate random realizations of naming game interaction
-pA_list = np.round(np.arange(0.01, 0.11, 0.01), 2)
+number_opinion = 6
+p = 0.012
+comm_seed_list = np.arange(10, 50, 1)  # for averaging effect, multiple communication seeds to generate random realizations of naming game interaction
 pA_list = [0.01]
-number_opinion = 2
+pA_list = np.round(np.arange(0.1, 0.16, 0.01), 3)
 for d, net_seed in zip(d_list, net_seed_list):
     for pA in pA_list:
         parallel_actual_simulation_network_multi_opinion(network_type, N, net_seed, d, interaction_number, data_point, number_opinion, comm_seed_list, pA, p)
